@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+
+  # ─── Hadoop NameNode (Master) ──────────────────────────────────────────────
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
+    ports:
+      - "9870:9870"   # NameNode Web UI
+      - "9000:9000"   # HDFS RPC
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+      - ./:/workspace
+      - ./data:/data
+    environment:
+      - CLUSTER_NAME=clickstream-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    networks:
+      - hadoop-net
+
+  # ─── Hadoop DataNode 1 ─────────────────────────────────────────────────────
+  datanode1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode1
+    restart: always
+    volumes:
+      - hadoop_datanode1:/hadoop/dfs/data
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    networks:
+      - hadoop-net
+    depends_on:
+      - namenode
+
+  # ─── Hadoop DataNode 2 ─────────────────────────────────────────────────────
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode2
+    restart: always
+    volumes:
+      - hadoop_datanode2:/hadoop/dfs/data
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    networks:
+      - hadoop-net
+    depends_on:
+      - namenode
+
+  # ─── YARN ResourceManager ─────────────────────────────────────────────────
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: resourcemanager
+    restart: always
+    ports:
+      - "8088:8088"   # YARN Web UI
+    environment:
+      - SERVICE_PRECONDITION=namenode:9000 namenode:9870 datanode1:9864 datanode2:9864
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    networks:
+      - hadoop-net
+    depends_on:
+      - namenode
+      - datanode1
+      - datanode2
+
+  # ─── YARN NodeManager ─────────────────────────────────────────────────────
+  nodemanager:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager
+    restart: always
+    environment:
+      - SERVICE_PRECONDITION=namenode:9000 namenode:9870 resourcemanager:8088
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    networks:
+      - hadoop-net
+    depends_on:
+      - resourcemanager
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode1:
+  hadoop_datanode2:
+
+networks:
+  hadoop-net:
+    driver: bridge

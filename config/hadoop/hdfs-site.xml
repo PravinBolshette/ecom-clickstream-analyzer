@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  hdfs-site.xml — HDFS-specific configuration
+  Defines replication factor, block size, and data/name directories.
+-->
+<configuration>
+  <property>
+    <name>dfs.replication</name>
+    <value>2</value>
+    <description>
+      Default block replication. Each block of data is stored on 2 DataNodes.
+      For production use 3; for single-node dev use 1.
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.blocksize</name>
+    <value>134217728</value>
+    <description>HDFS block size = 128 MB (128 * 1024 * 1024 bytes)</description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.name.dir</name>
+    <value>file:///hadoop/dfs/name</value>
+    <description>Path on the local filesystem for NameNode metadata</description>
+  </property>
+
+  <property>
+    <name>dfs.datanode.data.dir</name>
+    <value>file:///hadoop/dfs/data</value>
+    <description>Path on the local filesystem where DataNode stores blocks</description>
+  </property>
+
+  <property>
+    <name>dfs.webhdfs.enabled</name>
+    <value>true</value>
+    <description>Enable WebHDFS REST API</description>
+  </property>
+
+  <property>
+    <name>dfs.permissions.enabled</name>
+    <value>false</value>
+    <description>Disable permission checks (dev mode only)</description>
+  </property>
+</configuration>

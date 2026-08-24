@@ -1,0 +1,28 @@
+# Environment variables (contains secrets — never commit)
+.env
+
+# Generated data files (large CSVs — regenerate with generate_data.py)
+clickstream.csv
+data/raw/clickstream_logs.csv
+data/output/
+data/processed/
+
+# MapReduce output
+part-00000
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE / OS files
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
