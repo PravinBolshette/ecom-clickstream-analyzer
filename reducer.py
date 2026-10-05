@@ -22,7 +22,7 @@ def main():
             parts = line.split('\t')
             if len(parts) == 3:
                 metric_type, key, count_str = parts
-                full_key = f"{metric_type}\t{key}"
+                full_key = "{}\t{}".format(metric_type, key)
                 count = int(count_str)
             elif len(parts) == 2:
                 full_key, count_str = parts
@@ -34,7 +34,7 @@ def main():
                 current_count += count
             else:
                 if current_key:
-                    print(f"{current_key}\t{current_count}")
+                    print("{}\t{}".format(current_key, current_count))
                 current_key = full_key
                 current_count = count
 
@@ -42,7 +42,7 @@ def main():
             continue
 
     if current_key:
-        print(f"{current_key}\t{current_count}")
+        print("{}\t{}".format(current_key, current_count))
 
 if __name__ == "__main__":
     main()

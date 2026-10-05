@@ -1,6 +1,6 @@
-"""
+﻿"""
 generate_data.py
-────────────────
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Generates synthetic e-commerce clickstream dataset 'clickstream.csv' with 100,000+ rows.
 
 Schema:
@@ -32,7 +32,7 @@ except ImportError:
     fake = None
 
 # Configuration & Constants
-NUM_EVENTS = 100000
+NUM_EVENTS = 2000000
 OUTPUT_FILE = "clickstream.csv"
 
 USERS = [f"U{i}" for i in range(101, 5001)]

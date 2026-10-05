@@ -54,18 +54,18 @@ def main():
 
             # 1. Funnel Metric
             if action in ["SEARCH", "VIEW", "ADD_TO_CART", "PURCHASE"]:
-                print(f"FUNNEL\t{action}\t1")
+                print("FUNNEL\t{}\t1".format(action))
 
             # 2. Hourly Traffic Metric
             hour = parse_hour(timestamp)
-            print(f"HOURLY\t{hour}\t1")
+            print("HOURLY\t{}\t1".format(hour))
 
             # 3. Product Metrics
             if product_id:
                 if action == "VIEW":
-                    print(f"PROD_VIEW\t{product_id}\t1")
+                    print("PROD_VIEW\t{}\t1".format(product_id))
                 elif action == "PURCHASE":
-                    print(f"PROD_PURCHASE\t{product_id}\t1")
+                    print("PROD_PURCHASE\t{}\t1".format(product_id))
 
         except Exception as e:
             # Safely skip malformed lines

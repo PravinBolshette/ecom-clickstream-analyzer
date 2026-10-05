@@ -1,0 +1,16 @@
+FROM bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+
+USER root
+
+# Fix archive repositories for legacy Debian and install python3
+RUN if [ -f /etc/apt/sources.list ]; then \
+        sed -i -e 's/deb.debian.org/archive.debian.org/g' \
+               -e 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' \
+               -e 's|security.debian.org|archive.debian.org/debian-security|g' \
+               -e '/stretch-updates/d' \
+               -e '/jessie-updates/d' /etc/apt/sources.list; \
+    fi && \
+    apt-get -o Acquire::Check-Valid-Until=false update && \
+    apt-get install -y --no-install-recommends python3 && \
+    ln -s -f /usr/bin/python3 /usr/bin/python && \
+    rm -rf /var/lib/apt/lists/*
