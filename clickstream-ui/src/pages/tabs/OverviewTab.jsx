@@ -13,6 +13,8 @@ import SourceBadge from '../../components/SourceBadge.jsx';
 import MetricTooltip from '../../components/MetricTooltip.jsx';
 import LoadingSkeleton from '../../components/LoadingSkeleton.jsx';
 import ErrorState from '../../components/ErrorState.jsx';
+import TiltCard from '../../components/TiltCard.jsx';
+import IsometricFunnel from '../../components/IsometricFunnel.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-IN');
 
@@ -92,9 +94,6 @@ export default function OverviewTab() {
 
   const peakHourStr = String(peakHour).padStart(2, '0');
   const scaleOutHour = String((peakHour - 1 + 24) % 24).padStart(2, '0');
-
-  // Funnel calculations
-  const _droppedBeforeCart = views - cartAdds;
   const droppedAtCheckout = cartAdds - purchases;
   const funnel = funnelData?.stages || [
     { stage: 'SEARCH', count: 699116 },
@@ -116,9 +115,9 @@ export default function OverviewTab() {
         <SourceBadge source={source} />
       </div>
 
-      {/* KPI Cards Row */}
+      {/* KPI Cards Row with Parallax TiltCard (+/-10deg) */}
       <div className="kpis-grid" role="region" aria-label="Key Performance Indicators">
-        <div className="kpi-card-panel kpi-events">
+        <TiltCard maxTilt={10} className="kpi-card-panel kpi-events">
           <div className="kpi-card-head">
             <span className="kpi-title">Total Ingested Events</span>
             <MetricTooltip
@@ -129,9 +128,9 @@ export default function OverviewTab() {
           </div>
           <b className="kpi-metric-val">{fmt(totalEvents)}</b>
           <span className="kpi-meta-sub">Across 11 distributed HDFS blocks</span>
-        </div>
+        </TiltCard>
 
-        <div className="kpi-card-panel kpi-conversion">
+        <TiltCard maxTilt={10} className="kpi-card-panel kpi-conversion">
           <div className="kpi-card-head">
             <span className="kpi-title">Conversion Rate</span>
             <MetricTooltip
@@ -142,9 +141,9 @@ export default function OverviewTab() {
           </div>
           <b className="kpi-metric-val">{conversionRate.toFixed(2)}%</b>
           <span className="kpi-meta-sub">{fmt(purchases)} finalized orders</span>
-        </div>
+        </TiltCard>
 
-        <div className="kpi-card-panel kpi-abandonment">
+        <TiltCard maxTilt={10} className="kpi-card-panel kpi-abandonment">
           <div className="kpi-card-head">
             <span className="kpi-title">Cart Abandonment Rate</span>
             <MetricTooltip
@@ -155,9 +154,9 @@ export default function OverviewTab() {
           </div>
           <b className="kpi-metric-val">{cartAbandonmentRate.toFixed(1)}%</b>
           <span className="kpi-meta-sub">{fmt(droppedAtCheckout)} abandoned carts</span>
-        </div>
+        </TiltCard>
 
-        <div className="kpi-card-panel kpi-peak">
+        <TiltCard maxTilt={10} className="kpi-card-panel kpi-peak">
           <div className="kpi-card-head">
             <span className="kpi-title">Peak Traffic Window</span>
             <MetricTooltip
@@ -168,7 +167,7 @@ export default function OverviewTab() {
           </div>
           <b className="kpi-metric-val">{peakHourStr}:00 UTC</b>
           <span className="kpi-meta-sub">{fmt(peakEvents)} hourly clicks</span>
-        </div>
+        </TiltCard>
       </div>
 
       {/* Scaling Recommendation Alert */}
@@ -180,8 +179,8 @@ export default function OverviewTab() {
         </p>
       </div>
 
-      {/* 24-Hour Traffic Line / Area Chart */}
-      <div className="panel wide">
+      {/* 24-Hour Traffic Line / Area Chart wrapped with subtle TiltCard (+/-4deg) */}
+      <TiltCard maxTilt={4} className="panel wide">
         <div className="panel-title-row">
           <div>
             <h3>24-Hour Traffic Distribution</h3>
@@ -247,9 +246,9 @@ export default function OverviewTab() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </TiltCard>
 
-      {/* Conversion Funnel Section */}
+      {/* Pure-CSS Layered Isometric Funnel Section */}
       <div className="panel wide">
         <div className="panel-title-row">
           <div>
@@ -261,7 +260,11 @@ export default function OverviewTab() {
           <SourceBadge source={funnelData?.source || 'hadoop'} />
         </div>
 
-        <div className="funnel-pipeline-grid">
+        {/* Pure-CSS Layered Isometric Funnel with 3D/Flat toggle */}
+        <IsometricFunnel stages={funnel} totalEvents={totalEvents} />
+
+        {/* 2D Pipeline summary cards */}
+        <div className="funnel-pipeline-grid mt-4">
           {funnel.map((step, idx) => {
             const pctOfTotal = totalEvents > 0 ? (step.count / totalEvents) * 100 : 0;
             return (

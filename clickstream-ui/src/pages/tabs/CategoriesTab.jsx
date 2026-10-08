@@ -13,6 +13,7 @@ import SourceBadge from '../../components/SourceBadge.jsx';
 import MetricTooltip from '../../components/MetricTooltip.jsx';
 import LoadingSkeleton from '../../components/LoadingSkeleton.jsx';
 import ErrorState from '../../components/ErrorState.jsx';
+import TiltCard from '../../components/TiltCard.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-IN');
 
@@ -128,8 +129,8 @@ export default function CategoriesTab() {
         </div>
       </div>
 
-      {/* Grouped Bar Chart */}
-      <div className="panel wide">
+      {/* Grouped Bar Chart wrapped in TiltCard (+/-4deg) */}
+      <TiltCard maxTilt={4} className="panel wide">
         <div className="panel-title-row">
           <div>
             <h3>Discovery, Intent & Checkout Volumes</h3>
@@ -172,7 +173,7 @@ export default function CategoriesTab() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </TiltCard>
 
       {/* Sortable Category Performance Matrix Table */}
       <div className="panel wide">

@@ -14,6 +14,7 @@ import SourceBadge from '../../components/SourceBadge.jsx';
 import MetricTooltip from '../../components/MetricTooltip.jsx';
 import LoadingSkeleton from '../../components/LoadingSkeleton.jsx';
 import ErrorState from '../../components/ErrorState.jsx';
+import TiltCard from '../../components/TiltCard.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-IN');
 
@@ -218,8 +219,8 @@ export default function ProductsTab() {
         </div>
       </div>
 
-      {/* Scatter Plot: Views vs Conversion Rate */}
-      <div className="panel wide">
+      {/* Scatter Plot: Views vs Conversion Rate wrapped in TiltCard (+/-4deg) */}
+      <TiltCard maxTilt={4} className="panel wide">
         <div className="panel-title-row">
           <div>
             <h3>Discovery Volume vs. Purchase Conversion</h3>
@@ -288,7 +289,7 @@ export default function ProductsTab() {
             </ScatterChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </TiltCard>
 
       {/* High Interest, Low Conversion Friction Alert List */}
       <div className="panel wide friction-alert-section">

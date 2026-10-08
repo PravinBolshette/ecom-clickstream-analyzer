@@ -475,3 +475,80 @@ curl.exe -s http://localhost:4000/api/cluster
   - Carts: 360,035 (Exact match with `FUNNEL ADD_TO_CART 360035`)
   - Purchases: 138,275 (Exact match with `FUNNEL PURCHASE 138275`)
 - **Status:** **PASS** (Node API on port 4000 and React dev server on port 5173 operational, serving real cluster data).
+
+---
+
+## 🖥️ Phase 9: Streamlit Dashboard & Dual-UI Verification
+
+### 1. Objective
+Ensure that both analytical interfaces (the interactive Python Streamlit dashboard on port `8501` and the React + Vite frontend on port `5173`) are completely operational, consuming the 2,000,000-row MapReduce output (`part-00000`) simultaneously without discrepancies.
+
+### 2. Streamlit Dashboard Verification (`http://localhost:8501`)
+- **Execution Command:**
+  ```powershell
+  python -m streamlit run app.py --server.port 8501 --server.headless true
+  ```
+- **Data Loading Mechanism:**
+  - Function: `load_data("part-00000")`
+  - Loaded Metrics from Real Cluster Output:
+    - Funnel Searches: `699,116`
+    - Funnel Views: `802,574`
+    - Funnel Add to Cart: `360,035`
+    - Funnel Purchases: `138,275`
+    - Hourly Distribution: 24 distinct hourly buckets
+    - Top Products: 50 products (`P1001` - `P1050`)
+- **Visual Components Rendered:**
+  - KPI Scorecards: Total Visitors, Conversion Rate (`17.23%`), Cart Abandonment (`61.59%`), Peak Traffic Window (`10:00 UTC`).
+  - Plotly Funnel Chart: Full journey from Search to Purchase.
+  - 24-Hour Traffic Curve: Hourly volume with peak hour highlighting.
+  - Product Performance Matrix: Horizontal bar charts comparing views vs conversions.
+  - Category Breakdown: Distribution across Electronics, Fashion, Home, Sports, Books.
+
+### 3. Service Topology Matrix
+| Service | Technology | Port | Data Source | Status |
+|---|---|---|---|---|
+| **HDFS NameNode UI** | Apache Hadoop 3.2.1 | `9870` | Live Cluster Metadata | **ACTIVE** |
+| **YARN Resource Manager** | Apache Hadoop YARN | `8088` | Application Scheduler | **ACTIVE** |
+| **Streamlit Analytics** | Python 3 + Plotly | `8501` | Local `part-00000` | **ACTIVE** |
+| **Modern React Dashboard** | React 19 + Recharts | `5173` | Express REST API | **ACTIVE** |
+| **Clickstream REST API** | Node.js + Express | `4000` | `part-00000` + NameNode JMX | **ACTIVE** |
+
+### 4. Checkpoint Assessment
+- **Status:** **PASS** (Dual dashboards verified; Streamlit on 8501 and React on 5173 actively running alongside Hadoop master nodes).
+
+---
+
+## 🎓 Phase 10: Master Cloud Computing Viva & Oral Defense Cheatsheet
+
+### 1. HDFS (Hadoop Distributed File System) Architecture
+- **Q: Why did you set the block size to 16MB (`dfs.blocksize=16777216`) instead of the Hadoop default 128MB?**
+  - **Answer:** In our academic cluster with a 162MB dataset, a 128MB block size would create only 2 blocks, resulting in just 2 Map tasks. By setting the block size to 16MB, HDFS partitions the 162.36MB file into **11 distinct blocks**. This directly creates **11 InputSplits**, allowing YARN to schedule and demonstrate 11 concurrent Map tasks in parallel, maximizing container slot utilization and clearly exhibiting distributed map processing.
+- **Q: How does HDFS ensure zero data loss when a DataNode fails?**
+  - **Answer:** Our replication factor is set to 2 (`dfs.replication=2`). When `/ecommerce/raw/clickstream.csv` is uploaded, each of the 11 blocks is duplicated across `datanode1` and `datanode2`. If `datanode2` crashes, `namenode` marks it dead after missing heartbeats (default 10 mins, or during immediate TCP timeout), and redirects all client reads and YARN map tasks to `datanode1`. Zero blocks are missing, maintaining 100% data availability.
+- **Q: What happened when you ran `hdfs fsck` after killing `datanode2`?**
+  - **Answer:** `hdfs fsck` reported `Under-replicated blocks: 11 (100%)` because `Target Replicas is 2 but found 1 live replica`. However, `Missing blocks: 0`, proving that every single byte remained accessible from the surviving replica. Once `datanode2` restarted, it sent a Block Report to the NameNode, restoring the health status back to `HEALTHY` with 0 under-replicated blocks.
+
+### 2. YARN (Yet Another Resource Negotiator) Execution
+- **Q: Explain the lifecycle of your MapReduce job on YARN.**
+  - **Answer:** 
+    1. Client (`hadoop jar hadoop-streaming.jar`) submits the job to the **ResourceManager** (Port 8088).
+    2. ResourceManager allocates a container on a **NodeManager** to launch the **ApplicationMaster** (AM).
+    3. The ApplicationMaster requests compute containers from the ResourceManager based on the 11 InputSplits calculated by the InputFormat.
+    4. NodeManagers launch containers running Python Streaming processes (`python3 mapper.py`).
+    5. Mappers read splits from local HDFS DataNode blocks (data locality optimization).
+    6. Mappers stream intermediate key-value records to standard output (`stdout`).
+    7. Hadoop performs the **Shuffle & Sort** phase, sorting keys and routing identical keys to the same Reducer container (`python3 reducer.py`).
+    8. The Reducer writes the final aggregated metrics to HDFS (`/ecommerce/out/part-00000`).
+
+### 3. Python MapReduce Streaming & Compatibility
+- **Q: How does Hadoop Streaming allow Python code to run in a Java-based Hadoop cluster?**
+  - **Answer:** Hadoop Streaming uses Unix standard streams (`stdin` and `stdout`). The Hadoop mapper task feeds lines of the input file into the Python process's `sys.stdin`. The Python script (`mapper.py`) processes each line and prints tab-separated `<key>\t<value>` pairs to `sys.stdout`. The Hadoop framework intercepts `stdout`, sorts and partitions the keys, and pipes them into the `sys.stdin` of `reducer.py`.
+- **Q: Why did the original Hadoop containers fail to run Python, and how was it solved?**
+  - **Answer:** The base `bde2020` images only contain Java 8 on Debian Stretch, without Python 3. Furthermore, Debian Stretch package mirrors have been moved to `archive.debian.org`. We built custom Dockerfiles (`docker/hadoop-python/Dockerfile.namenode` and `nodemanager`) that point APT sources to `archive.debian.org`, install `python3`, and symlink `/usr/bin/python3` to `/usr/bin/python`. Additionally, scripts were checked for Python 3.5.3 compatibility by replacing f-strings with `.format()`.
+
+### 4. Scalability & Performance Analysis
+- **Q: Why did processing 100,000 rows take 24.41s while 1,000,000 rows (10x more data) took only 33.51s (1.37x time)?**
+  - **Answer:** This highlights the **distributed computing baseline overhead**. YARN container allocation, JVM initialization, ApplicationMaster negotiation, and JAR localization take ~18–20 seconds regardless of data volume. At 100K rows, this overhead dominates execution time (throughput: 4,096 rows/s). At 1M and 2M rows, the actual Map task parallelism absorbs the overhead, driving throughput up to **33,812 rows/s** (an 8.2x efficiency increase).
+- **Q: How does this prove Cloud Elasticity and Horizontal Scaling?**
+  - **Answer:** In a traditional single-node system, processing time scales linearly with data size ($O(N)$). In our distributed Hadoop cluster, as data scales from 1M to 2M rows, execution time scales gracefully because data is chunked into 16MB blocks processed by concurrent map tasks. In a cloud environment (AWS EC2 / EMR), we can add more NodeManager instances dynamically during peak traffic hours (identified as 10:00–18:00 UTC) to maintain constant latency.
+

@@ -336,13 +336,14 @@ function getEnrichedStore() {
 
 // ── REST ENDPOINTS ────────────────────────────────────────────────────────────
 
-// 0. API Metadata
-app.get('/', (_req, res) => {
+// 0. API Metadata & Health
+app.get('/api', (_req, res) => {
   res.json({
     status: 'ok',
     name: 'Hadoop Clickstream Analytics API',
     version: '2.0.0',
     endpoints: [
+      '/api/health',
       '/api/summary',
       '/api/categories',
       '/api/products',
@@ -354,6 +355,15 @@ app.get('/', (_req, res) => {
       '/api/metrics',
       '/api/login'
     ]
+  });
+});
+
+app.get('/api/health', (_req, res) => {
+  res.json({
+    status: 'HEALTHY',
+    service: 'clickstream-api',
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString()
   });
 });
 

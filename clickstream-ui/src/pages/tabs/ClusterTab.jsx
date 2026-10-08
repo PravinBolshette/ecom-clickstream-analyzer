@@ -3,6 +3,7 @@ import { fetchCluster } from '../../services/api.js';
 import SourceBadge from '../../components/SourceBadge.jsx';
 import LoadingSkeleton from '../../components/LoadingSkeleton.jsx';
 import ErrorState from '../../components/ErrorState.jsx';
+import IsometricCluster from '../../components/IsometricCluster.jsx';
 
 const PIPELINE_STAGES = [
   {
@@ -202,6 +203,9 @@ export default function ClusterTab() {
           </div>
         </div>
       </div>
+
+      {/* Pure-CSS Layered Isometric Cluster Health Stack */}
+      <IsometricCluster cluster={cluster} simulatedDown={simulatedDown} />
 
       {/* Fault Tolerance & High Availability Demo */}
       <div className="panel wide fault-tolerance-panel">
