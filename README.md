@@ -252,21 +252,135 @@ tmux new-session -d -s dashboard 'streamlit run app.py --server.port 8501 --serv
 
 ### 4. Access Live Public Application
 Open your web browser and navigate to:
+- **Modern React Dashboard**: `http://<EC2-PUBLIC-IP>:4000` (or `5173` in development)
+- **Clickstream REST API**: `http://<EC2-PUBLIC-IP>:4000/api`
 - **Streamlit Dashboard**: `http://<EC2-PUBLIC-IP>:8501`
 - **Hadoop NameNode UI**: `http://<EC2-PUBLIC-IP>:9870`
 - **YARN Resource UI**: `http://<EC2-PUBLIC-IP>:8088`
 
 ---
 
-## 🛠 Project File Structure
+## ⚡ Step 7: Modern Enterprise React Analytics Dashboard (Single-Port & Dev)
+
+The repository includes a modern, production-grade presentation layer built with **React 19**, **Vite**, **Express 5**, **Recharts**, and **Three.js / React Three Fiber**.
+
+### 🌟 Key Highlights & Visual Architecture
+- **Accessible 5-Tab Navigation**: `Overview`, `Categories`, `Products`, `Behavior`, and `Cluster Health` with full ARIA semantics and arrow-key cycling.
+- **Hardware-Accelerated TiltCard**: Zero-React-state parallax tilt loop running via `requestAnimationFrame` with lerped mouse tracking and specular glare.
+- **Pure-CSS Layered Isometric Views**: 2.5D layered isometric stacks for Funnel and Cluster tiers (`transform-style: preserve-3d`) with instant flat-view toggles.
+- **3D Spatial Topology (WebGL)**: Interactive 3D Hadoop cluster model (`ClusterScene3D.jsx`) featuring glowing master nodes, 11 orbiting block satellites per DataNode, animated heartbeat beams, and live failover simulation.
+- **Interactive Friction Diagnostics**: Dynamic identification of products suffering discovery-to-checkout drop-off using parametric percentile thresholds.
+
+---
+
+### 🚀 Running the Modern Dashboard
+
+#### Mode A: Production Single-Port Serving (Recommended)
+Builds the client SPA into static assets and serves both the REST API and the SPA from port `4000`:
+```bash
+# 1. Build the Vite frontend
+npm --prefix clickstream-ui run build
+
+# 2. Launch Express REST API & SPA Server
+PORT=4000 node clickstream-ui/server/server.js
+```
+Open **`http://localhost:4000`** in your browser. All API requests (`/api/*`) are handled natively, and all client route transitions fallback seamlessly to `index.html`.
+
+#### Mode B: Local Development Workflow (Dual-Port with Hot Reload)
+Run the backend REST API and the Vite development server concurrently:
+
+**Terminal 1 (REST API Gateway):**
+```bash
+node clickstream-ui/server/server.js
+# Serves REST API on http://localhost:4000
+```
+
+**Terminal 2 (Vite Hot-Reload Dev Server):**
+```bash
+npm --prefix clickstream-ui run dev
+# Serves UI on http://localhost:5173 (proxies /api requests to port 4000)
+```
+Open **`http://localhost:5173`** in your browser.
+
+---
+
+## 📡 REST API Reference
+
+The Node.js Express server exposes clean, JSON endpoints that ingest Hadoop `part-*` outputs and live NameNode JMX metrics:
+
+| Endpoint | Method | Description | Data Source |
+|---|---|---|---|
+| `/api` | `GET` | API status, version, and catalog of registered endpoints | Internal |
+| `/api/health` | `GET` | Service liveness, uptime, and health status | System |
+| `/api/summary` | `GET` | Executive KPIs (Total Events, Views, Carts, Purchases, Searches, Conversion Rate, Abandonment Rate) | Hadoop `part-00000` / Fallback |
+| `/api/categories` | `GET` | Performance matrix across the 5 categories (Electronics, Fashion, Home, Sports, Books) | Hadoop `part-00000` / Fallback |
+| `/api/products` | `GET` | 50-product catalog with views, carts, purchases, and friction flags. Supports `?category=`, `?minViews=`, `?viewPctl=`, `?convPctl=` | Hadoop `part-00000` / Fallback |
+| `/api/devices` | `GET` | Traffic and conversion breakdown across Mobile, Desktop, and Tablet | Hadoop `part-00000` / Fallback |
+| `/api/locations` | `GET` | Geographic performance across Pune, Mumbai, Delhi, Bangalore, and Hyderabad | Hadoop `part-00000` / Fallback |
+| `/api/hourly` | `GET` | 24-hour diurnal traffic curve with peak traffic hour identification | Hadoop `part-00000` / Fallback |
+| `/api/funnel` | `GET` | Conversion funnel stages (`SEARCH` → `VIEW` → `ADD_TO_CART` → `PURCHASE`) with drop-off analytics | Hadoop `part-00000` / Fallback |
+| `/api/cluster` | `GET` | Real-time NameNode JMX probe (Active DataNodes, Capacity, Under-replicated blocks) with failover simulation | Hadoop JMX / Simulated |
+| `/api/login` | `POST` | Demo session authentication (`admin` / `clickstream123`) | Auth |
+
+---
+
+## 📐 Business Metric Definitions & Diagnostic Formulas
+
+### 1. Purchase Conversion Rate
+Measures the percentage of catalog product views that successfully conclude in a purchase:
+$$\text{Conversion Rate} = \left( \frac{\text{Purchases}}{\text{Views}} \right) \times 100\%$$
+
+### 2. Cart Abandonment Rate
+Measures the percentage of cart additions where the user dropped off before completing checkout:
+$$\text{Cart Abandonment Rate} = \left( \frac{\text{Cart Additions} - \text{Purchases}}{\text{Cart Additions}} \right) \times 100\%$$
+
+### 3. Product Friction Diagnostic Rule
+Identifies high-traffic products experiencing severe purchase drop-off (potential UX barriers, price sensitivity, or stock issues):
+$$\text{Friction Product} = \left( \text{Views} \ge P_{75}(\text{Views}) \right) \;\land\; \left( \text{Conversion Rate} \le P_{25}(\text{Conversion Rate}) \right) \;\land\; \left( \text{Views} \ge 50 \right)$$
+- $P_{75}(\text{Views})$: 75th percentile of views in the active filter scope.
+- $P_{25}(\text{Conversion Rate})$: 25th percentile of conversion rate in the active filter scope.
+- Configurable via API parameters `?minViews=`, `?viewPctl=`, and `?convPctl=`.
+
+---
+
+## 🛠 Complete Project File Structure
 ```
 Cloud_Computing_CP/
-├── clickstream.csv           # Generated raw dataset (100,000+ rows)
+├── clickstream.csv           # Generated raw dataset (100,000+ to 2,000,000 rows)
 ├── generate_data.py          # Synthetic dataset generator script
 ├── docker-compose.yml        # Multi-node Hadoop 3.x cluster compose definition
 ├── mapper.py                 # Hadoop Streaming Mapper script
 ├── reducer.py                # Hadoop Streaming Reducer script
-├── app.py                    # Streamlit + Plotly interactive dashboard
+├── app.py                    # Streamlit + Plotly interactive dashboard (port 8501)
 ├── requirements.txt          # Python dependencies
-└── README.md                 # Master project documentation & step-by-step guide
+├── EVIDENCE.md               # Complete verification log & oral defense cheatsheet
+├── README.md                 # Master project documentation
+└── clickstream-ui/           # Modern Enterprise React Analytics Application
+    ├── package.json          # React 19, Vite, Express, Three.js, Recharts
+    ├── vite.config.js        # Vite config with /api proxy to port 4000
+    ├── server/
+    │   └── server.js         # Express 5 REST API & single-port SPA static server
+    └── src/
+        ├── App.jsx           # Main application layout & accessible tab navigation
+        ├── App.css           # Design tokens, glassmorphism, isometric CSS & 3D styling
+        ├── components/
+        │   ├── TiltCard.jsx          # High-performance zero-state RAF 3D parallax card
+        │   ├── IsometricFunnel.jsx   # Pure-CSS layered isometric funnel visualization
+        │   ├── IsometricCluster.jsx  # Pure-CSS layered isometric cluster health stack
+        │   ├── ClusterScene3D.jsx    # Interactive WebGL 3D cluster spatial model
+        │   ├── HeroScene3D.jsx       # 3D funnel particle mesh for landing page
+        │   ├── MetricCard.jsx        # KPI metric display with tooltips & deltas
+        │   ├── SourceBadge.jsx       # Live vs Demo/Simulated data indicator badge
+        │   ├── LoadingSkeleton.jsx   # Skeleton placeholder loader
+        │   └── ErrorState.jsx        # Graceful error & retry boundary
+        ├── pages/
+        │   ├── Home.jsx              # Landing & overview page
+        │   └── tabs/
+        │       ├── OverviewTab.jsx   # Executive KPIs & Diurnal Traffic
+        │       ├── CategoriesTab.jsx # 5-Category performance & drop-off matrix
+        │       ├── ProductsTab.jsx   # Catalog matrix & dynamic friction diagnostics
+        │       ├── BehaviorTab.jsx   # Device, geographic, & stage conversion funnel
+        │       └── ClusterTab.jsx    # 3D spatial mesh, architecture map & failover demo
+        └── services/
+            └── api.js                # REST API client with fallback tolerance
 ```
