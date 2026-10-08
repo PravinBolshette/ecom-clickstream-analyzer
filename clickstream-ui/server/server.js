@@ -716,7 +716,7 @@ app.get('/api/cluster', async (_req, res) => {
         });
       }
     }
-  } catch (err) {
+  } catch {
     // Falls through to clearly flagged simulated payload
   }
 
@@ -813,7 +813,7 @@ if (fs.existsSync(distPath)) {
 }
 
 // ── SERVER LIFECYCLE ──────────────────────────────────────────────────────────
-const server = app.listen(PORT, () => {
+const _server = app.listen(PORT, () => {
   console.log(`[Clickstream API] Running on http://localhost:${PORT}`);
   console.log(`[Clickstream API] Data directory: ${DATA_DIR || 'auto-resolved'}`);
   console.log(`[Clickstream API] NameNode target: ${NAMENODE_URL}`);
