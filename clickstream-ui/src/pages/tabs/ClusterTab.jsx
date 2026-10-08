@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { fetchCluster } from '../../services/api.js';
 import SourceBadge from '../../components/SourceBadge.jsx';
 import LoadingSkeleton from '../../components/LoadingSkeleton.jsx';
 import ErrorState from '../../components/ErrorState.jsx';
 import IsometricCluster from '../../components/IsometricCluster.jsx';
+
+const ClusterScene3D = lazy(() => import('../../components/ClusterScene3D.jsx'));
 
 const PIPELINE_STAGES = [
   {
@@ -68,6 +70,7 @@ export default function ClusterTab() {
   const [error, setError] = useState(null);
   const [selectedStageId, setSelectedStageId] = useState('hdfs');
   const [simulatedDown, setSimulatedDown] = useState(false);
+  const [viewMode, setViewMode] = useState('3d'); // '3d' | 'iso'
 
   const loadData = () => {
     setLoading(true);
@@ -204,8 +207,45 @@ export default function ClusterTab() {
         </div>
       </div>
 
-      {/* Pure-CSS Layered Isometric Cluster Health Stack */}
-      <IsometricCluster cluster={cluster} simulatedDown={simulatedDown} />
+      {/* Topology Visualization Mode Switcher */}
+      <div className="iso-controls-bar" style={{ marginBottom: 12 }}>
+        <div className="flex-row items-center gap-2">
+          <span className="iso-mode-indicator">
+            Cluster Topology: <strong>{viewMode === '3d' ? '3D Spatial Mesh (WebGL)' : '2.5D Isometric CSS Stack'}</strong>
+          </span>
+        </div>
+        <div className="flex-row items-center gap-2">
+          <button
+            type="button"
+            className={`iso-toggle-btn ${viewMode === '3d' ? 'active' : ''}`}
+            onClick={() => setViewMode('3d')}
+            aria-pressed={viewMode === '3d'}
+          >
+            🌐 3D Spatial Mesh
+          </button>
+          <button
+            type="button"
+            className={`iso-toggle-btn ${viewMode === 'iso' ? 'active' : ''}`}
+            onClick={() => setViewMode('iso')}
+            aria-pressed={viewMode === 'iso'}
+          >
+            📐 2.5D Isometric CSS
+          </button>
+        </div>
+      </div>
+
+      {/* Cluster Topology View: 3D Spatial Mesh or 2.5D Isometric CSS */}
+      {viewMode === '3d' ? (
+        <Suspense fallback={<LoadingSkeleton height={440} lines={6} />}>
+          <ClusterScene3D
+            cluster={cluster}
+            simulatedDown={simulatedDown}
+            onFallbackToIso={() => setViewMode('iso')}
+          />
+        </Suspense>
+      ) : (
+        <IsometricCluster cluster={cluster} simulatedDown={simulatedDown} />
+      )}
 
       {/* Fault Tolerance & High Availability Demo */}
       <div className="panel wide fault-tolerance-panel">
